@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="Jinbro98/openclaw-personal-claw"
+REPO="Jinbro98/personal-claw"
 INSTALL_DIR="${OPENCLAW_PERSONAL_CLAW_DIR:-$HOME/.openclaw/extensions/openclaw-personal-claw}"
 CONFIG="$HOME/.openclaw/openclaw.json"
 
@@ -21,16 +21,6 @@ fi
 echo "✅ Node.js $(node -v)"
 echo "✅ OpenClaw $(openclaw --version 2>/dev/null | head -1)"
 echo ""
-
-# BACKUP plugins.allow before install (OpenClaw regenerates it and drops existing plugins)
-ALLOW_BACKUP=$(python3 -c "
-import json, sys
-with open('$CONFIG') as f:
-    c = json.load(f)
-allow = c.get('plugins', {}).get('allow', [])
-print(json.dumps(allow))
-" 2>/dev/null || echo "[]")
-echo "💾 Backed up plugins.allow ($ALLOW_BACKUP)"
 
 # Clone
 echo "📥 Cloning to ${INSTALL_DIR}..."
@@ -61,20 +51,16 @@ rm -rf "$HOME/.openclaw/extensions/openclaw-personal-claw"
 echo "🔌 Registering plugin..."
 openclaw plugins install "$INSTALL_DIR"
 
-# RESTORE plugins.allow (fix OpenClaw dropping existing plugins from allowlist)
-echo "🔧 Restoring plugins.allow..."
+# Remove plugins.allow so OpenClaw auto-loads all discovered plugins
+echo "🔧 Removing plugins.allow (auto-allow mode)..."
 python3 -c "
 import json
 with open('$CONFIG') as f:
     c = json.load(f)
-saved = json.loads('$ALLOW_BACKUP')
-current = c.get('plugins', {}).get('allow', [])
-# Merge: keep saved + anything new the install added
-merged = sorted(set(saved + current))
-c.setdefault('plugins', {})['allow'] = merged
+c.get('plugins', {}).pop('allow', None)
 with open('$CONFIG', 'w') as f:
     json.dump(c, f, indent=2, ensure_ascii=False)
-print(f'   plugins.allow restored ({len(merged)} plugins)')
+print('   plugins.allow removed — all discovered plugins auto-allowed')
 "
 
 # Restart gateway

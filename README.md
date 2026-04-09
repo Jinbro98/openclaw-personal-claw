@@ -79,13 +79,13 @@ Example: you might prefer detailed code explanations but concise general answers
 ### Quick Install (one-liner)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Jinbro98/openclaw-personal-claw/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Jinbro98/personal-claw/main/install.sh | bash
 ```
 
 ### Manual Install
 
 ```bash
-git clone https://github.com/Jinbro98/openclaw-personal-claw.git
+git clone https://github.com/Jinbro98/personal-claw.git
 cd openclaw-personal-claw
 npm install
 npm run build

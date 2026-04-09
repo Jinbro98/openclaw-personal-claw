@@ -78,13 +78,13 @@ personal-claw는 대화 주제를 감지하고 별도의 선호 프로필을 유
 ### 원라인 설치
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Jinbro98/openclaw-personal-claw/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Jinbro98/personal-claw/main/install.sh | bash
 ```
 
 ### 수동 설치
 
 ```bash
-git clone https://github.com/Jinbro98/openclaw-personal-claw.git
+git clone https://github.com/Jinbro98/personal-claw.git
 cd openclaw-personal-claw
 npm install
 npm run build
