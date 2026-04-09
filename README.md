@@ -76,7 +76,13 @@ Example: you might prefer detailed code explanations but concise general answers
 - [OpenClaw](https://docs.openclaw.ai) >= 2026.3.0
 - Node.js >= 22.0.0
 
-### Install
+### Quick Install (one-liner)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Jinbro98/openclaw-personal-claw/main/install.sh | bash
+```
+
+### Manual Install
 
 ```bash
 git clone https://github.com/Jinbro98/openclaw-personal-claw.git
