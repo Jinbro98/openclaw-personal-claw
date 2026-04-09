@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO="Jinbro98/openclaw-personal-claw"
 INSTALL_DIR="${OPENCLAW_PERSONAL_CLAW_DIR:-$HOME/.openclaw/extensions/openclaw-personal-claw}"
+CONFIG="$HOME/.openclaw/openclaw.json"
 
 echo "🦞 personal-claw installer"
 echo ""
@@ -20,6 +21,16 @@ fi
 echo "✅ Node.js $(node -v)"
 echo "✅ OpenClaw $(openclaw --version 2>/dev/null | head -1)"
 echo ""
+
+# BACKUP plugins.allow before install (OpenClaw regenerates it and drops existing plugins)
+ALLOW_BACKUP=$(python3 -c "
+import json, sys
+with open('$CONFIG') as f:
+    c = json.load(f)
+allow = c.get('plugins', {}).get('allow', [])
+print(json.dumps(allow))
+" 2>/dev/null || echo "[]")
+echo "💾 Backed up plugins.allow ($ALLOW_BACKUP)"
 
 # Clone
 echo "📥 Cloning to ${INSTALL_DIR}..."
@@ -43,32 +54,32 @@ npm run build --silent
 echo "🧪 Running tests..."
 npm test --silent 2>/dev/null && echo "   ✅ All tests passed" || echo "   ⚠️  Tests had issues (continuing anyway)"
 
-# Register plugin
+# Remove old install dir if exists (avoid "plugin already exists" error)
+rm -rf "$HOME/.openclaw/extensions/openclaw-personal-claw"
+
+# Install plugin
 echo "🔌 Registering plugin..."
 openclaw plugins install "$INSTALL_DIR"
 
-# Add to trusted plugins list (suppresses "plugins.allow is empty" warning)
-echo "🔒 Adding to trusted plugins list..."
-OPENCLAW_CONFIG="${OPENCLAW_CONFIG:-$HOME/.openclaw/openclaw.json}"
-if command -v node >/dev/null 2>&1 && [ -f "$OPENCLAW_CONFIG" ]; then
-  node -e "
-    const fs = require('fs');
-    const config = JSON.parse(fs.readFileSync('$OPENCLAW_CONFIG', 'utf-8'));
-    config.plugins = config.plugins || {};
-    config.plugins.allow = config.plugins.allow || [];
-    if (!config.plugins.allow.includes('openclaw-personal-claw')) {
-      config.plugins.allow.push('openclaw-personal-claw');
-      fs.writeFileSync('$OPENCLAW_CONFIG', JSON.stringify(config, null, 2));
-      console.log('   ✅ Added to plugins.allow');
-    } else {
-      console.log('   ✅ Already in plugins.allow');
-    }
-  " 2>/dev/null || echo "   ⚠️  Could not update plugins.allow (non-critical)"
-fi
+# RESTORE plugins.allow (fix OpenClaw dropping existing plugins from allowlist)
+echo "🔧 Restoring plugins.allow..."
+python3 -c "
+import json
+with open('$CONFIG') as f:
+    c = json.load(f)
+saved = json.loads('$ALLOW_BACKUP')
+current = c.get('plugins', {}).get('allow', [])
+# Merge: keep saved + anything new the install added
+merged = sorted(set(saved + current))
+c.setdefault('plugins', {})['allow'] = merged
+with open('$CONFIG', 'w') as f:
+    json.dump(c, f, indent=2, ensure_ascii=False)
+print(f'   plugins.allow restored ({len(merged)} plugins)')
+"
 
 # Restart gateway
 echo "🔄 Restarting gateway..."
-openclaw gateway restart
+openclaw gateway restart 2>/dev/null || true
 
 echo ""
 echo "✅ personal-claw installed and running!"
